@@ -275,4 +275,21 @@ export interface EncryptedPayload {
   note: string;
 }
 
-export type DecodedPayload = unknown | TruncatedPayload | ProtobufPayload | EncryptedPayload;
+export type DecodedPayload =
+  | TruncatedPayload
+  | ProtobufPayload
+  | EncryptedPayload
+  | string
+  | number
+  | boolean
+  | null
+  | Record<string, unknown>
+  | unknown[];
+
+// --- Shared Utility Types ---
+
+/** Protobuf Long value type */
+export type Long = {
+  toNumber(): number;
+  toString(): string;
+};

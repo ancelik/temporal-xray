@@ -1,5 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import type { z } from "zod";
 import {
   ListWorkflowsInputSchema,
   GetWorkflowHistoryInputSchema,
@@ -23,139 +24,77 @@ const server = new McpServer({
   version: "1.1.0",
 });
 
-// Tool 1: list_workflows
-server.tool(
+function registerTool<S extends z.ZodObject<z.ZodRawShape>>(
+  name: string,
+  description: string,
+  schema: S,
+  handler: (input: z.infer<S>) => Promise<unknown>
+) {
+  server.tool(name, description, schema.shape, async (input) => {
+    try {
+      const parsed = schema.parse(input);
+      const result = await handler(parsed);
+      return {
+        content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return {
+        content: [{ type: "text" as const, text: JSON.stringify({ error: message }, null, 2) }],
+        isError: true,
+      };
+    }
+  });
+}
+
+registerTool(
   "list_workflows",
   "List and search Temporal workflow executions. Filter by workflow type, ID, status, time range, or raw visibility query. Use this to find specific executions for investigation.",
-  ListWorkflowsInputSchema.shape,
-  async (input) => {
-    try {
-      const parsed = ListWorkflowsInputSchema.parse(input);
-      const result = await listWorkflows(parsed);
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
-      };
-    } catch (error) {
-      return errorResponse(error);
-    }
-  }
+  ListWorkflowsInputSchema,
+  listWorkflows
 );
 
-// Tool 2: get_workflow_history
-server.tool(
+registerTool(
   "get_workflow_history",
   "Get the execution history of a Temporal workflow. Returns a timeline of activities with their inputs, outputs, durations, and any failures. Use detail_level 'summary' for overview, 'standard' for full payloads, 'full' for raw events.",
-  GetWorkflowHistoryInputSchema.shape,
-  async (input) => {
-    try {
-      const parsed = GetWorkflowHistoryInputSchema.parse(input);
-      const result = await getWorkflowHistory(parsed);
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
-      };
-    } catch (error) {
-      return errorResponse(error);
-    }
-  }
+  GetWorkflowHistoryInputSchema,
+  getWorkflowHistory
 );
 
-// Tool 3: get_workflow_stack_trace
-server.tool(
+registerTool(
   "get_workflow_stack_trace",
   "Get the current stack trace and pending activities of a running Temporal workflow. Shows where the workflow is blocked and what it's waiting for.",
-  GetWorkflowStackTraceInputSchema.shape,
-  async (input) => {
-    try {
-      const parsed = GetWorkflowStackTraceInputSchema.parse(input);
-      const result = await getWorkflowStackTrace(parsed);
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
-      };
-    } catch (error) {
-      return errorResponse(error);
-    }
-  }
+  GetWorkflowStackTraceInputSchema,
+  getWorkflowStackTrace
 );
 
-// Tool 4: compare_executions
-server.tool(
+registerTool(
   "compare_executions",
   "Compare two Temporal workflow executions to find where they diverge. Identifies data differences in activity inputs/outputs, structural differences (different activities executed), and signal differences. Ideal for investigating why one execution succeeded and another failed.",
-  CompareExecutionsInputSchema.shape,
-  async (input) => {
-    try {
-      const parsed = CompareExecutionsInputSchema.parse(input);
-      const result = await compareExecutions(parsed);
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
-      };
-    } catch (error) {
-      return errorResponse(error);
-    }
-  }
+  CompareExecutionsInputSchema,
+  compareExecutions
 );
 
-// Tool 5: describe_task_queue
-server.tool(
+registerTool(
   "describe_task_queue",
   "Describe a Temporal task queue to check worker health. Shows active pollers, their versions, last access times, and processing rates. Useful for diagnosing infrastructure issues and version mismatches.",
-  DescribeTaskQueueInputSchema.shape,
-  async (input) => {
-    try {
-      const parsed = DescribeTaskQueueInputSchema.parse(input);
-      const result = await describeTaskQueue(parsed);
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
-      };
-    } catch (error) {
-      return errorResponse(error);
-    }
-  }
+  DescribeTaskQueueInputSchema,
+  describeTaskQueue
 );
 
-// Tool 6: search_workflow_data
-server.tool(
+registerTool(
   "search_workflow_data",
   "Search and aggregate Temporal workflow data using visibility queries. Find patterns across many executions — count affected workflows, list them, or get a sample. Useful for detecting widespread silent failures.",
-  SearchWorkflowDataInputSchema.shape,
-  async (input) => {
-    try {
-      const parsed = SearchWorkflowDataInputSchema.parse(input);
-      const result = await searchWorkflowData(parsed);
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
-      };
-    } catch (error) {
-      return errorResponse(error);
-    }
-  }
+  SearchWorkflowDataInputSchema,
+  searchWorkflowData
 );
 
-// Tool 7: temporal_connection
-server.tool(
+registerTool(
   "temporal_connection",
   "Check or change the Temporal server connection. Use action 'status' to see current connection info, or 'connect' to switch to a different server or namespace. Useful for working with multiple environments (dev, staging, prod).",
-  TemporalConnectionInputSchema.shape,
-  async (input) => {
-    try {
-      const parsed = TemporalConnectionInputSchema.parse(input);
-      const result = await temporalConnection(parsed);
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
-      };
-    } catch (error) {
-      return errorResponse(error);
-    }
-  }
+  TemporalConnectionInputSchema,
+  temporalConnection
 );
-
-function errorResponse(error: unknown) {
-  const message = error instanceof Error ? error.message : String(error);
-  return {
-    content: [{ type: "text" as const, text: JSON.stringify({ error: message }, null, 2) }],
-    isError: true,
-  };
-}
 
 // Start the server
 async function main() {
@@ -163,15 +102,13 @@ async function main() {
   await server.connect(transport);
 
   // Clean up on exit
-  process.on("SIGINT", async () => {
+  const shutdown = async () => {
     await closeConnection();
     process.exit(0);
-  });
+  };
 
-  process.on("SIGTERM", async () => {
-    await closeConnection();
-    process.exit(0);
-  });
+  process.on("SIGINT", shutdown);
+  process.on("SIGTERM", shutdown);
 }
 
 main().catch((error) => {

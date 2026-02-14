@@ -6,7 +6,7 @@ import {
   filterInternalEvents,
   filterByEventTypes,
 } from "./event-filter.js";
-import type { TimelineStep, WorkflowHistory } from "../types.js";
+import type { TimelineStep, WorkflowHistory, Long } from "../types.js";
 
 type HistoryEvent = temporal.api.history.v1.IHistoryEvent;
 
@@ -373,14 +373,22 @@ function formatTimestamp(
   return date.toISOString();
 }
 
+function timestampToMs(
+  ts: { seconds?: number | Long | null; nanos?: number | null } | null | undefined
+): number | null {
+  if (!ts) return null;
+  const seconds = typeof ts.seconds === "number" ? ts.seconds : Number(ts.seconds || 0);
+  return seconds * 1000 + (ts.nanos || 0) / 1_000_000;
+}
+
 function computeDurationMs(
   start: { seconds?: number | Long | null; nanos?: number | null } | null | undefined,
   end: { seconds?: number | Long | null; nanos?: number | null } | null | undefined
 ): number | null {
-  const startStr = formatTimestamp(start);
-  const endStr = formatTimestamp(end);
-  if (!startStr || !endStr) return null;
-  return new Date(endStr).getTime() - new Date(startStr).getTime();
+  const startMs = timestampToMs(start);
+  const endMs = timestampToMs(end);
+  if (startMs === null || endMs === null) return null;
+  return endMs - startMs;
 }
 
 function formatDuration(
@@ -423,9 +431,3 @@ function summarizeValue(value: unknown): string {
   if (json.length <= 200) return json;
   return json.slice(0, 197) + "...";
 }
-
-// Type alias for Long values from protobuf
-type Long = {
-  toNumber(): number;
-  toString(): string;
-};

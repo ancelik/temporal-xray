@@ -1,5 +1,5 @@
 import { getTemporalClient } from "../temporal-client.js";
-import type { DescribeTaskQueueInput, TaskQueueInfo } from "../types.js";
+import type { DescribeTaskQueueInput, TaskQueueInfo, Long } from "../types.js";
 
 export async function describeTaskQueue(
   input: DescribeTaskQueueInput
@@ -72,9 +72,3 @@ export async function describeTaskQueue(
     throw new Error(`Failed to describe task queue: ${message}`);
   }
 }
-
-// Type alias for Long values from protobuf
-type Long = {
-  toNumber(): number;
-  toString(): string;
-};

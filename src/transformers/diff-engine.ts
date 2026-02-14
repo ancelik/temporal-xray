@@ -211,25 +211,8 @@ interface DiffResult {
  */
 function deepDiff(a: unknown, b: unknown, basePath: string): DiffResult[] {
   if (a === b) return [];
-  if (a === undefined && b === undefined) return [];
-  if (a === null && b === null) return [];
 
-  // If both are strings (summaries), compare directly
-  if (typeof a === "string" && typeof b === "string") {
-    if (a !== b) {
-      return [
-        {
-          path: basePath,
-          valueA: a,
-          valueB: b,
-          note: `Different values at ${basePath}`,
-        },
-      ];
-    }
-    return [];
-  }
-
-  // If both are objects, compare field by field
+  // Both objects (non-array): compare field by field
   if (
     a !== null &&
     b !== null &&
@@ -247,14 +230,13 @@ function deepDiff(a: unknown, b: unknown, basePath: string): DiffResult[] {
     for (const key of allKeys) {
       const valA = (a as Record<string, unknown>)[key];
       const valB = (b as Record<string, unknown>)[key];
-      const childPath = `${basePath}.${key}`;
-      results.push(...deepDiff(valA, valB, childPath));
+      results.push(...deepDiff(valA, valB, `${basePath}.${key}`));
     }
 
     return results;
   }
 
-  // If both are arrays, compare element by element
+  // Both arrays: compare element by element
   if (Array.isArray(a) && Array.isArray(b)) {
     const results: DiffResult[] = [];
     const maxLen = Math.max(a.length, b.length);
@@ -267,16 +249,12 @@ function deepDiff(a: unknown, b: unknown, basePath: string): DiffResult[] {
   }
 
   // Different types or primitive values
-  if (a !== b) {
-    return [
-      {
-        path: basePath,
-        valueA: a,
-        valueB: b,
-        note: `Different values at ${basePath}`,
-      },
-    ];
-  }
-
-  return [];
+  return [
+    {
+      path: basePath,
+      valueA: a,
+      valueB: b,
+      note: `Different values at ${basePath}`,
+    },
+  ];
 }

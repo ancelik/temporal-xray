@@ -113,89 +113,52 @@ export interface ActivityEventGroup {
   canceled?: HistoryEvent;
 }
 
+// Maps activity lifecycle events to their attribute accessor and group field
+const ACTIVITY_LIFECYCLE_EVENTS: Record<string, {
+  attrs: keyof HistoryEvent;
+  field: keyof Pick<ActivityEventGroup, "started" | "completed" | "failed" | "timedOut" | "canceled">;
+}> = {
+  ActivityTaskStarted: { attrs: "activityTaskStartedEventAttributes", field: "started" },
+  ActivityTaskCompleted: { attrs: "activityTaskCompletedEventAttributes", field: "completed" },
+  ActivityTaskFailed: { attrs: "activityTaskFailedEventAttributes", field: "failed" },
+  ActivityTaskTimedOut: { attrs: "activityTaskTimedOutEventAttributes", field: "timedOut" },
+  ActivityTaskCanceled: { attrs: "activityTaskCanceledEventAttributes", field: "canceled" },
+};
+
 export function groupActivityEvents(
   events: HistoryEvent[]
 ): Map<string, ActivityEventGroup> {
   const groups = new Map<string, ActivityEventGroup>();
+  // Index for O(1) lookup: scheduledEventId string -> activityId
+  const scheduledEventIndex = new Map<string, string>();
 
   for (const event of events) {
     const eventType = resolveEventType(event);
-    let activityId: string | undefined;
-    let attrs: Record<string, unknown> | undefined;
 
     if (eventType === "ActivityTaskScheduled") {
-      attrs = event.activityTaskScheduledEventAttributes as Record<string, unknown> | undefined;
-      activityId = attrs?.activityId as string | undefined;
+      const attrs = event.activityTaskScheduledEventAttributes as Record<string, unknown> | undefined;
+      const activityId = attrs?.activityId as string | undefined;
       if (activityId) {
         const activityType =
           (attrs?.activityType as { name?: string })?.name || "Unknown";
-        const group = groups.get(activityId) || {
-          activityType,
-          activityId,
-        };
+        const group = groups.get(activityId) || { activityType, activityId };
         group.scheduled = event;
         groups.set(activityId, group);
+        scheduledEventIndex.set(String(event.eventId), activityId);
       }
-    } else if (eventType === "ActivityTaskStarted") {
-      attrs = event.activityTaskStartedEventAttributes as Record<string, unknown> | undefined;
-      const scheduledId = String(attrs?.scheduledEventId || "");
-      // Find the group by matching scheduledEventId
-      for (const [id, group] of groups) {
-        if (
-          group.scheduled &&
-          String(group.scheduled.eventId) === scheduledId
-        ) {
-          group.started = event;
-          break;
-        }
-      }
-    } else if (eventType === "ActivityTaskCompleted") {
-      attrs = event.activityTaskCompletedEventAttributes as Record<string, unknown> | undefined;
-      const scheduledId = String(attrs?.scheduledEventId || "");
-      for (const [id, group] of groups) {
-        if (
-          group.scheduled &&
-          String(group.scheduled.eventId) === scheduledId
-        ) {
-          group.completed = event;
-          break;
-        }
-      }
-    } else if (eventType === "ActivityTaskFailed") {
-      attrs = event.activityTaskFailedEventAttributes as Record<string, unknown> | undefined;
-      const scheduledId = String(attrs?.scheduledEventId || "");
-      for (const [id, group] of groups) {
-        if (
-          group.scheduled &&
-          String(group.scheduled.eventId) === scheduledId
-        ) {
-          group.failed = event;
-          break;
-        }
-      }
-    } else if (eventType === "ActivityTaskTimedOut") {
-      attrs = event.activityTaskTimedOutEventAttributes as Record<string, unknown> | undefined;
-      const scheduledId = String(attrs?.scheduledEventId || "");
-      for (const [id, group] of groups) {
-        if (
-          group.scheduled &&
-          String(group.scheduled.eventId) === scheduledId
-        ) {
-          group.timedOut = event;
-          break;
-        }
-      }
-    } else if (eventType === "ActivityTaskCanceled") {
-      attrs = event.activityTaskCanceledEventAttributes as Record<string, unknown> | undefined;
-      const scheduledId = String(attrs?.scheduledEventId || "");
-      for (const [id, group] of groups) {
-        if (
-          group.scheduled &&
-          String(group.scheduled.eventId) === scheduledId
-        ) {
-          group.canceled = event;
-          break;
-        }
+      continue;
+    }
+
+    const mapping = ACTIVITY_LIFECYCLE_EVENTS[eventType];
+    if (!mapping) continue;
+
+    const attrs = event[mapping.attrs] as Record<string, unknown> | undefined;
+    const scheduledId = String(attrs?.scheduledEventId || "");
+    const activityId = scheduledEventIndex.get(scheduledId);
+    if (activityId) {
+      const group = groups.get(activityId);
+      if (group) {
+        group[mapping.field] = event;
       }
     }
   }

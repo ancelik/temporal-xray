@@ -1,6 +1,8 @@
 import { Connection, Client } from "@temporalio/client";
 import type { DecodedPayload } from "./types.js";
 
+const textDecoder = new TextDecoder();
+
 let connectionInstance: Connection | null = null;
 const clientCache = new Map<string, Client>();
 
@@ -182,7 +184,7 @@ export function decodePayload(
   if (!payload || !payload.data) return null;
 
   const encoding = payload.metadata?.["encoding"]
-    ? new TextDecoder().decode(payload.metadata["encoding"])
+    ? textDecoder.decode(payload.metadata["encoding"])
     : "";
 
   // Encrypted payloads
@@ -196,7 +198,7 @@ export function decodePayload(
   // Protobuf payloads
   if (encoding === "binary/protobuf" || encoding.startsWith("json/protobuf")) {
     const messageType = payload.metadata?.["messageType"]
-      ? new TextDecoder().decode(payload.metadata["messageType"])
+      ? textDecoder.decode(payload.metadata["messageType"])
       : "unknown";
     return {
       _type: "protobuf",
@@ -207,7 +209,7 @@ export function decodePayload(
 
   // JSON payloads (default)
   try {
-    const raw = new TextDecoder().decode(payload.data);
+    const raw = textDecoder.decode(payload.data);
 
     // Large payload truncation
     if (truncateAt && payload.data.byteLength > truncateAt) {
@@ -221,7 +223,7 @@ export function decodePayload(
     return JSON.parse(raw);
   } catch {
     // If not valid JSON, return as string
-    return new TextDecoder().decode(payload.data);
+    return textDecoder.decode(payload.data);
   }
 }
 
