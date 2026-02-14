@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.2.0 (2026-02-14)
+
+### Changed
+- Simplified architecture: 16 files → 4 files (server.py, client.py, transformers.py)
+- Adopted FastMCP `@mcp.tool()` decorators, replacing manual tool routing boilerplate
+- Dropped Pydantic output models — tools return plain dicts
+- Dropped Pydantic input models — tool parameters use `Annotated` with `Field` descriptions
+- Consolidated error handling into shared `_raise_friendly()` helper
+- Centralized timestamp, payload, and workflow summary utilities in `client.py`
+- Simplified connection caching to a single `_client_cache` dict
+- Removed `pydantic` from direct dependencies (available transitively via `mcp`)
+
 ## 1.1.0 (2026-02-14)
 
 ### Added

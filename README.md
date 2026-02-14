@@ -43,7 +43,7 @@ All tools are strictly read-only. The plugin never calls any mutating Temporal A
 ### Prerequisites
 
 - [Claude Code](https://claude.ai/download) CLI
-- Node.js 18+
+- Python 3.10+
 - A running Temporal server (local, self-hosted, or Temporal Cloud)
 
 ### Install the plugin
@@ -165,19 +165,19 @@ Claude Code
   |
   |  /temporal-xray:inspect
   v
-Skills & Agent          (investigation strategy + domain knowledge)
+Skills & Agent        (investigation strategy + domain knowledge)
   |
   v
-MCP Server (TypeScript) (7 tools via MCP protocol)
+MCP Server (Python)   (7 tools via FastMCP)
   |
   |  gRPC
   v
-Temporal Server         (local, cloud, or self-hosted)
+Temporal Server       (local, cloud, or self-hosted)
 ```
 
 The plugin has three layers:
 
-1. **MCP Server** — TypeScript process wrapping `@temporalio/client` that translates Temporal's gRPC API into MCP tool calls
+1. **MCP Server** — Python process using FastMCP and `temporalio` that translates Temporal's gRPC API into MCP tool calls
 2. **Skills** — `temporal-debugging` teaches Claude how to investigate workflows; `inspect` is the user-facing entry point
 3. **Subagent** — `temporal-investigator` runs complex investigations with persistent memory
 
@@ -211,14 +211,11 @@ temporal-xray/
 │   ├── inspect/SKILL.md           User-facing /inspect skill
 │   ├── setup/SKILL.md             Connection setup guide
 │   └── temporal-debugging/SKILL.md  Investigation knowledge base
-├── src/
-│   ├── index.ts                   MCP server entry point
-│   ├── temporal-client.ts         Temporal connection management
-│   ├── types.ts                   Zod schemas and TypeScript types
-│   ├── tools/                     7 tool implementations
-│   └── transformers/              History summarizer, diff engine, event filter
-├── package.json
-└── tsconfig.json
+├── src/temporal_xray/
+│   ├── server.py                  FastMCP server with 7 tool definitions
+│   ├── client.py                  Temporal connection, payload/timestamp utilities
+│   └── transformers.py            Event filtering, history summarization, diffing
+└── pyproject.toml
 ```
 
 ## Development
@@ -226,8 +223,7 @@ temporal-xray/
 ```bash
 git clone https://github.com/ancelik/temporal-xray.git
 cd temporal-xray
-npm install
-npm run build
+pip install -e .
 
 # Test with Claude Code
 claude --plugin-dir .
