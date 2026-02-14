@@ -229,6 +229,10 @@ pip install -e .
 claude --plugin-dir .
 ```
 
+## Roadmap
+
+- [ ] **Multi-server connection support** — Allow simultaneous connections to multiple Temporal servers (e.g., staging and prod) without losing cached clients. Currently, switching servers via `temporal_connection` clears all connections. Fix: key the client cache by `address|namespace` instead of just namespace.
+
 ## License
 
 MIT
