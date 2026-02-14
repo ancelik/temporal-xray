@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "temporal-xray": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/dist/index.js"],
+      "cwd": "${CLAUDE_PLUGIN_ROOT}",
+      "env": {
+        "TEMPORAL_ADDRESS": "${TEMPORAL_ADDRESS}",
+        "TEMPORAL_NAMESPACE": "${TEMPORAL_NAMESPACE}"
+      }
+    }
+  }
+}
