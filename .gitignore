@@ -1,5 +1,9 @@
-node_modules/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
 dist/
-*.tsbuildinfo
+build/
+.venv/
 .env
 .env.local
