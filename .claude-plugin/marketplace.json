@@ -8,8 +8,8 @@
     {
       "name": "temporal-xray",
       "source": {
-        "source": "github",
-        "repo": "ancelik/temporal-xray"
+        "source": "url",
+        "url": "https://github.com/ancelik/temporal-xray.git"
       },
       "description": "Debug Temporal workflows directly from Claude Code. Provides six read-only MCP tools to inspect workflow executions, trace data flow through activities, compare good and bad runs, check worker health, and detect patterns across thousands of executions."
     }
