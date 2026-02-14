@@ -8,11 +8,13 @@ export async function compareExecutions(
   // Fetch both histories at standard detail level for full data comparison
   const [historyA, historyB] = await Promise.all([
     getWorkflowHistory({
+      namespace: input.namespace,
       workflow_id: input.workflow_id_a,
       run_id: input.run_id_a,
       detail_level: "standard",
     }),
     getWorkflowHistory({
+      namespace: input.namespace,
       workflow_id: input.workflow_id_b,
       run_id: input.run_id_b,
       detail_level: "standard",

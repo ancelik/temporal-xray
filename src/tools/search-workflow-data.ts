@@ -8,7 +8,7 @@ import type {
 export async function searchWorkflowData(
   input: SearchWorkflowDataInput
 ): Promise<SearchWorkflowDataOutput> {
-  const client = await getTemporalClient();
+  const client = await getTemporalClient(input.namespace);
 
   // Build query with workflow type prefix
   const escapedType = input.workflow_type.replace(/'/g, "''");

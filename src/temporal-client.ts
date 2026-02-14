@@ -1,8 +1,8 @@
 import { Connection, Client } from "@temporalio/client";
 import type { DecodedPayload } from "./types.js";
 
-let clientInstance: Client | null = null;
 let connectionInstance: Connection | null = null;
+const clientCache = new Map<string, Client>();
 
 export interface TemporalConfig {
   address: string;
@@ -12,7 +12,10 @@ export interface TemporalConfig {
   apiKey?: string;
 }
 
+let activeConfig: TemporalConfig | null = null;
+
 function getConfig(): TemporalConfig {
+  if (activeConfig) return activeConfig;
   return {
     address: process.env.TEMPORAL_ADDRESS || "localhost:7233",
     namespace: process.env.TEMPORAL_NAMESPACE || "default",
@@ -47,8 +50,8 @@ async function buildTlsConfig(
   return undefined;
 }
 
-export async function getTemporalClient(): Promise<Client> {
-  if (clientInstance) return clientInstance;
+async function ensureConnection(): Promise<Connection> {
+  if (connectionInstance) return connectionInstance;
 
   const config = getConfig();
   const tls = await buildTlsConfig(config);
@@ -68,11 +71,7 @@ export async function getTemporalClient(): Promise<Client> {
 
   try {
     connectionInstance = await Connection.connect(connectionOptions);
-    clientInstance = new Client({
-      connection: connectionInstance,
-      namespace: config.namespace,
-    });
-    return clientInstance;
+    return connectionInstance;
   } catch (error) {
     const message =
       error instanceof Error ? error.message : String(error);
@@ -82,11 +81,93 @@ export async function getTemporalClient(): Promise<Client> {
   }
 }
 
+/**
+ * Get a Temporal client for the given namespace.
+ * If no namespace is provided, uses the configured default.
+ * Clients are cached per namespace and share the same connection.
+ */
+export async function getTemporalClient(
+  namespace?: string
+): Promise<Client> {
+  const config = getConfig();
+  const effectiveNamespace = namespace || config.namespace;
+
+  const cached = clientCache.get(effectiveNamespace);
+  if (cached) return cached;
+
+  // For API key auth with a non-default namespace, we need a new connection
+  // because the temporal-namespace header is set at the connection level
+  if (
+    config.apiKey &&
+    effectiveNamespace !== config.namespace &&
+    connectionInstance
+  ) {
+    const tls = await buildTlsConfig(config);
+    const conn = await Connection.connect({
+      address: config.address,
+      tls,
+      metadata: { "temporal-namespace": effectiveNamespace },
+      apiKey: config.apiKey,
+    });
+    const client = new Client({ connection: conn, namespace: effectiveNamespace });
+    clientCache.set(effectiveNamespace, client);
+    return client;
+  }
+
+  const connection = await ensureConnection();
+  const client = new Client({
+    connection,
+    namespace: effectiveNamespace,
+  });
+  clientCache.set(effectiveNamespace, client);
+  return client;
+}
+
+/**
+ * Connect to a different Temporal server. Closes the existing connection
+ * and clears the client cache.
+ */
+export async function connectToServer(
+  config: TemporalConfig
+): Promise<{ address: string; namespace: string; authType: string }> {
+  await closeConnection();
+  activeConfig = config;
+
+  // Verify the connection works
+  await getTemporalClient();
+
+  return getConnectionStatus();
+}
+
+/**
+ * Get the current connection status.
+ */
+export function getConnectionStatus(): {
+  address: string;
+  namespace: string;
+  authType: string;
+  connected: boolean;
+} {
+  const config = getConfig();
+  const authType = config.apiKey
+    ? "api_key"
+    : config.tlsCertPath
+      ? "mtls"
+      : "none";
+
+  return {
+    address: config.address,
+    namespace: config.namespace,
+    authType,
+    connected: connectionInstance !== null,
+  };
+}
+
 export async function closeConnection(): Promise<void> {
+  clientCache.clear();
   if (connectionInstance) {
     await connectionInstance.close();
     connectionInstance = null;
-    clientInstance = null;
   }
 }
 

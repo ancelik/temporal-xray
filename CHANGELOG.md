@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.1.0 (2026-02-14)
+
+### Added
+- `temporal_connection` tool — check or switch Temporal server connections at runtime
+- `setup` skill (`/temporal-xray:setup`) — guided onboarding for local, cloud, and self-hosted Temporal servers
+- Optional `namespace` parameter on all 6 debugging tools for per-call namespace targeting
+- Multi-namespace client cache — query different namespaces without reconfiguring
+- Dynamic server switching — connect to dev, staging, prod servers without restarting
+- All 5 Temporal env vars now passed through `.mcp.json` (added TLS and API key)
+
+### Changed
+- `temporal-client.ts` refactored from singleton to multi-namespace client cache
+- `inspect` skill now checks connection status before investigating
+- `temporal-debugging` skill updated with namespace awareness guidance
+- `temporal-investigator` agent updated with multi-environment capabilities
+
 ## 1.0.0 (2026-02-13)
 
 ### Added

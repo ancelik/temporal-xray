@@ -32,6 +32,9 @@ temporal-xray eliminates this by giving Claude direct access to your execution d
 | `compare_executions` | Diff two executions to find exactly where data or structure diverges |
 | `describe_task_queue` | Check worker health, polling status, and version consistency |
 | `search_workflow_data` | Count or sample executions matching a pattern across your namespace |
+| `temporal_connection` | Check or switch Temporal server connections for multi-environment workflows |
+
+All debugging tools accept an optional `namespace` parameter, so you can query different namespaces without reconfiguring.
 
 All tools are strictly read-only. The plugin never calls any mutating Temporal API.
 
@@ -79,6 +82,14 @@ export TEMPORAL_TLS_KEY_PATH=/path/to/client.key
 
 If no environment variables are set, the plugin defaults to `localhost:7233` with the `default` namespace.
 
+### First-time setup
+
+Run the setup skill to get guided through connecting to your Temporal server:
+
+```
+/temporal-xray:setup
+```
+
 ## Usage
 
 ### Slash command
@@ -102,6 +113,20 @@ Just describe the problem. Claude will use the tools automatically:
 
 "Is anyone polling the order-workers task queue?"
 ```
+
+### Multiple environments
+
+You can work with multiple Temporal servers and namespaces without restarting:
+
+```
+"Check the payments namespace for failed workflows"
+
+"Switch to the staging server at staging.tmprl.cloud:7233"
+
+"Compare the production execution with the staging one"
+```
+
+All tools accept a `namespace` parameter for per-call namespace targeting. Use `temporal_connection` to switch servers entirely.
 
 ### Investigator subagent
 
@@ -143,7 +168,7 @@ Claude Code
 Skills & Agent          (investigation strategy + domain knowledge)
   |
   v
-MCP Server (TypeScript) (6 read-only tools via MCP protocol)
+MCP Server (TypeScript) (7 tools via MCP protocol)
   |
   |  gRPC
   v
@@ -184,12 +209,13 @@ temporal-xray/
 │   └── temporal-investigator.md   Investigator subagent
 ├── skills/
 │   ├── inspect/SKILL.md           User-facing /inspect skill
+│   ├── setup/SKILL.md             Connection setup guide
 │   └── temporal-debugging/SKILL.md  Investigation knowledge base
 ├── src/
 │   ├── index.ts                   MCP server entry point
 │   ├── temporal-client.ts         Temporal connection management
 │   ├── types.ts                   Zod schemas and TypeScript types
-│   ├── tools/                     6 tool implementations
+│   ├── tools/                     7 tool implementations
 │   └── transformers/              History summarizer, diff engine, event filter
 ├── package.json
 └── tsconfig.json

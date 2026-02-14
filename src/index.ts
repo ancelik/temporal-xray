@@ -7,6 +7,7 @@ import {
   CompareExecutionsInputSchema,
   DescribeTaskQueueInputSchema,
   SearchWorkflowDataInputSchema,
+  TemporalConnectionInputSchema,
 } from "./types.js";
 import { listWorkflows } from "./tools/list-workflows.js";
 import { getWorkflowHistory } from "./tools/get-workflow-history.js";
@@ -14,11 +15,12 @@ import { getWorkflowStackTrace } from "./tools/get-workflow-stack-trace.js";
 import { compareExecutions } from "./tools/compare-executions.js";
 import { describeTaskQueue } from "./tools/describe-task-queue.js";
 import { searchWorkflowData } from "./tools/search-workflow-data.js";
+import { temporalConnection } from "./tools/temporal-connection.js";
 import { closeConnection } from "./temporal-client.js";
 
 const server = new McpServer({
   name: "temporal-xray",
-  version: "1.0.0",
+  version: "1.1.0",
 });
 
 // Tool 1: list_workflows
@@ -120,6 +122,24 @@ server.tool(
     try {
       const parsed = SearchWorkflowDataInputSchema.parse(input);
       const result = await searchWorkflowData(parsed);
+      return {
+        content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
+      };
+    } catch (error) {
+      return errorResponse(error);
+    }
+  }
+);
+
+// Tool 7: temporal_connection
+server.tool(
+  "temporal_connection",
+  "Check or change the Temporal server connection. Use action 'status' to see current connection info, or 'connect' to switch to a different server or namespace. Useful for working with multiple environments (dev, staging, prod).",
+  TemporalConnectionInputSchema.shape,
+  async (input) => {
+    try {
+      const parsed = TemporalConnectionInputSchema.parse(input);
+      const result = await temporalConnection(parsed);
       return {
         content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
       };

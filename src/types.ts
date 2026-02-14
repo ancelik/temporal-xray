@@ -2,7 +2,15 @@ import { z } from "zod";
 
 // --- Input Schemas ---
 
+const namespaceField = z
+  .string()
+  .optional()
+  .describe(
+    "Temporal namespace to query. Defaults to the configured namespace (TEMPORAL_NAMESPACE env var or 'default')."
+  );
+
 export const ListWorkflowsInputSchema = z.object({
+  namespace: namespaceField,
   workflow_type: z.string().optional().describe("Filter by workflow type name"),
   workflow_id: z.string().optional().describe("Filter by exact workflow ID"),
   status: z
@@ -39,6 +47,7 @@ export const ListWorkflowsInputSchema = z.object({
 });
 
 export const GetWorkflowHistoryInputSchema = z.object({
+  namespace: namespaceField,
   workflow_id: z.string().describe("Workflow execution ID"),
   run_id: z.string().optional().describe("Run ID (defaults to latest run)"),
   detail_level: z
@@ -52,11 +61,13 @@ export const GetWorkflowHistoryInputSchema = z.object({
 });
 
 export const GetWorkflowStackTraceInputSchema = z.object({
+  namespace: namespaceField,
   workflow_id: z.string().describe("Workflow execution ID"),
   run_id: z.string().optional().describe("Run ID (defaults to latest run)"),
 });
 
 export const CompareExecutionsInputSchema = z.object({
+  namespace: namespaceField,
   workflow_id_a: z.string().describe('Workflow ID of the "good" execution'),
   workflow_id_b: z.string().describe('Workflow ID of the "bad" execution'),
   run_id_a: z.string().optional().describe("Run ID for execution A"),
@@ -64,6 +75,7 @@ export const CompareExecutionsInputSchema = z.object({
 });
 
 export const DescribeTaskQueueInputSchema = z.object({
+  namespace: namespaceField,
   task_queue: z.string().describe("Task queue name"),
   task_queue_type: z
     .enum(["workflow", "activity"])
@@ -72,6 +84,7 @@ export const DescribeTaskQueueInputSchema = z.object({
 });
 
 export const SearchWorkflowDataInputSchema = z.object({
+  namespace: namespaceField,
   workflow_type: z.string().describe("Workflow type to search"),
   query: z.string().describe("Temporal visibility query"),
   aggregate: z
@@ -87,6 +100,37 @@ export const SearchWorkflowDataInputSchema = z.object({
     .describe("Max results"),
 });
 
+export const TemporalConnectionInputSchema = z.object({
+  action: z
+    .enum(["status", "connect"])
+    .default("status")
+    .describe(
+      "'status' to check current connection, 'connect' to establish a new one"
+    ),
+  address: z
+    .string()
+    .optional()
+    .describe(
+      "Temporal server address (e.g., localhost:7233 or your-ns.tmprl.cloud:7233)"
+    ),
+  namespace: z
+    .string()
+    .optional()
+    .describe("Default namespace for this connection"),
+  api_key: z
+    .string()
+    .optional()
+    .describe("API key for Temporal Cloud authentication"),
+  tls_cert_path: z
+    .string()
+    .optional()
+    .describe("Path to TLS client certificate for mTLS authentication"),
+  tls_key_path: z
+    .string()
+    .optional()
+    .describe("Path to TLS client key for mTLS authentication"),
+});
+
 // --- Input Types ---
 
 export type ListWorkflowsInput = z.infer<typeof ListWorkflowsInputSchema>;
@@ -95,6 +139,7 @@ export type GetWorkflowStackTraceInput = z.infer<typeof GetWorkflowStackTraceInp
 export type CompareExecutionsInput = z.infer<typeof CompareExecutionsInputSchema>;
 export type DescribeTaskQueueInput = z.infer<typeof DescribeTaskQueueInputSchema>;
 export type SearchWorkflowDataInput = z.infer<typeof SearchWorkflowDataInputSchema>;
+export type TemporalConnectionInput = z.infer<typeof TemporalConnectionInputSchema>;
 
 // --- Output Types ---
 

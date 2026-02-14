@@ -49,7 +49,7 @@ function buildQuery(input: ListWorkflowsInput): string {
 export async function listWorkflows(
   input: ListWorkflowsInput
 ): Promise<ListWorkflowsOutput> {
-  const client = await getTemporalClient();
+  const client = await getTemporalClient(input.namespace);
   const query = buildQuery(input);
 
   const workflows: WorkflowSummary[] = [];

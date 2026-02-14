@@ -4,7 +4,7 @@ import type { GetWorkflowStackTraceInput, StackTraceOutput } from "../types.js";
 export async function getWorkflowStackTrace(
   input: GetWorkflowStackTraceInput
 ): Promise<StackTraceOutput> {
-  const client = await getTemporalClient();
+  const client = await getTemporalClient(input.namespace);
 
   try {
     const handle = client.workflow.getHandle(

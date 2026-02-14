@@ -4,7 +4,7 @@ import type { DescribeTaskQueueInput, TaskQueueInfo } from "../types.js";
 export async function describeTaskQueue(
   input: DescribeTaskQueueInput
 ): Promise<TaskQueueInfo> {
-  const client = await getTemporalClient();
+  const client = await getTemporalClient(input.namespace);
 
   try {
     const taskQueueType =

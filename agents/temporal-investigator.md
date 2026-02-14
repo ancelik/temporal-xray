@@ -27,6 +27,12 @@ You have access to these MCP tools for reading Temporal execution data:
 - `compare_executions` — Diff two executions to find where they diverge
 - `describe_task_queue` — Check worker health and version consistency
 - `search_workflow_data` — Find patterns across many executions
+- `temporal_connection` — Check or switch Temporal server connections
+
+All tools accept an optional `namespace` parameter. If the developer asks about
+a specific environment (dev, staging, prod) or namespace, pass it to each tool
+call. Use `temporal_connection` to check which server you're connected to or to
+switch servers entirely.
 
 You also have full access to read the project's source code to correlate
 runtime behavior with code.

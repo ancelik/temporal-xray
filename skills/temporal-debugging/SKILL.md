@@ -10,6 +10,14 @@ user-invocable: false
 
 # Temporal Workflow Investigation
 
+## Namespace Awareness
+
+All tools accept an optional `namespace` parameter. If the developer mentions a
+specific environment (e.g., "check staging", "look at the payments namespace"),
+pass the appropriate namespace to every tool call. Use `temporal_connection` with
+action `status` to see the current default namespace, or action `connect` to
+switch servers entirely.
+
 ## Investigation Strategy
 
 When a developer reports a workflow issue, determine which category it falls
