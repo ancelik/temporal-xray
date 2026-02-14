@@ -11,7 +11,6 @@ authors = [{ name = "Neil Celik", email = "neil@evermindlabs.com" }]
 dependencies = [
     "mcp>=1.0.0",
     "temporalio>=1.7.0",
-    "pydantic>=2.0.0",
 ]
 
 [project.scripts]
