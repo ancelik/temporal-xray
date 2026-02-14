@@ -46,11 +46,16 @@ All tools are strictly read-only. The plugin never calls any mutating Temporal A
 ### Install the plugin
 
 ```bash
-# From the Claude Code plugin marketplace
+# Add the temporal-xray marketplace and install
+claude plugin marketplace add https://raw.githubusercontent.com/anilcelik/temporal-xray/main/marketplace.json
 claude plugin install temporal-xray
+```
 
-# Or for development, point directly at the repo
-claude --plugin-dir /path/to/temporal-xray
+Or for development, point directly at a local clone:
+
+```bash
+git clone https://github.com/anilcelik/temporal-xray.git
+claude --plugin-dir ./temporal-xray
 ```
 
 ### Configure your Temporal connection
