@@ -47,8 +47,8 @@ All tools are strictly read-only. The plugin never calls any mutating Temporal A
 
 ```bash
 # Add the temporal-xray marketplace and install
-claude plugin marketplace add https://raw.githubusercontent.com/ancelik/temporal-xray/main/marketplace.json
-claude plugin install temporal-xray
+claude plugin marketplace add ancelik/temporal-xray
+claude plugin install temporal-xray@temporal-xray
 ```
 
 Or for development, point directly at a local clone:
