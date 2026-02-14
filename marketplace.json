@@ -6,7 +6,7 @@
       "name": "temporal-xray",
       "description": "Debug Temporal workflows directly from Claude Code. Provides six read-only MCP tools to inspect workflow executions, trace data flow through activities, compare good and bad runs to find where they diverge, check worker health, and detect patterns across thousands of executions.",
       "source": "github",
-      "repo": "anilcelik/temporal-xray"
+      "repo": "ancelik/temporal-xray"
     }
   ]
 }
